@@ -1,5 +1,5 @@
 ---
-published: false
+published: true
 title: What's wrong with TeX
 layout: post
 ---
