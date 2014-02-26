@@ -1,0 +1,26 @@
+---
+published: false
+title: What's wrong with TeX
+layout: post
+---
+<small>(Prompted by a thread on HackerNews, which quickly transitioned into debating the merits of LaTeX as a markup language and typesetting system: https://news.ycombinator.com/item?id=7278907.)</small>
+
+[TikZ] is a perfect example of TeX's missed potential: it is an outstandingly well designed DSL for diagram creation, embedded in an insane macro language. The moment you try to do anything nontrivial that exploits the programmatic (rather than purely declarative) nature of TikZ you immediately run into wall after wall trying to express basic programming concepts in the host language, TeX.
+
+For example, two common patterns I have seen frequently arise as perfect uses for a programmatic diagram description:
+
+- using computed coordinates and transforms to construct complex paths and diagram layouts from the composition of basic geometric reasoning;
+
+- using abstraction to tersely encapsulate common visual components, both for simple iteration over many similar components, or for higher-order encapsulation of parameterized diagram logic.
+
+In both cases, you quickly run face first into fundamental limitations of TeX as a programming language. In particular, it is extremely painful to use for *either* arithmetic *or* control flow. This is a big enough deal in practice that core among TikZ's features are custom inline arithmetic syntax for coordinate computation, color blending, etc., and a custom `\foreach` macro, both defined not in the language, but provided as part of a specialized *diagraming library*, because they are fundamentally at odds with the design of the core TeX language. Even this impressive bit of TeX engineering still breaks down as soon as you try to do much more than iterate over a hard-coded constant range. (How much do you need to bracket, `\relax`, etc. the operands of your `\foreach` if it is used inside of a macro definition? Or if they are the result of computation, even as simple as basic index evaluation like `\x+1`? Now what if you want to iterate over a range which results computed in part using floating point arithmetic using one or another library?)
+
+TeX suffers because it is at once both a relatively awkward markup language (relative to something like Markdown) and an extremely awkward programming language. Many tasks which would be trivial in any mainstream programming language are outrageously challenging and arcane in TeX. The LuaTeX effort to embed a sane, modern programming language much more centrally into the core of the TeX runtime is a fruitful direction, but it still does little to better formalize or structure the various levels of document representation for programmatic transformation: we still have a giant stack of TeX macro complexity, ultimately expanding down to very low-level page rendering descriptions, just now with the ability to register Lua callbacks at various points along the way, or use Lua scripts to generate new tokens during the expansion process.
+
+As a clever, minimalist hack, the single-pass macro expansion semantics at the core of the language were a great way for one man to bootstrap a complex typesetting system. As an expedient hack to build an incrementally more humane document generation system atop the powerful low-level typesetting engine already available in TeX, LaTeX got a lot of mileage for relatively little cost. As an intermediate representation for modern typesetting systems, TeX could be a reasonable higher-level alternative to something like PostScript (which few bother to write by hand, but is a great low-level page description language, particular as a target for machine generation). But as either a primary programming language *or* a human-facing markup language, TeX is a terrible fit. Worse, the extreme difficulty of doing anything parametric in TeX makes it a bad fit for a future of many display formats and adaptive (responsive) layout, where baking tools focussed on baking a single paginated output format are less and less relevant.
+
+The evidence for how different the world could be is not given by plain Markdown for comment boxes—that is, indeed, an apples to oranges comparison—but by the power that comes from creating an extensible and programmable document transformation system based on a well-defined document grammar (which is, in fact, a recursive data type, not tied to any one front-end syntax). That's the heart of [Pandoc]. It's not just "extended Markdown" or "a markup format converter," it's a powerful framework for document transformation, which naturally supports humane markup, while also allowing extreme extensibility via general-purpose programming languages. See the [scripting] documentation to get a sense for the model of extensibility, then recognize that this same document representation is the core of every translation and transformation Pandoc does, and how this model enables many of the same things as TeX's macros, but in a far more structured yet also programming-friendly way.
+
+[TikZ]: http://www.texample.net/tikz/
+[Pandoc]: http://johnmacfarlane.net/pandoc/
+[scripting]: http://johnmacfarlane.net/pandoc/scripting.html
